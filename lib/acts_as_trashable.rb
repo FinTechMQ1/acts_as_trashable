@@ -11,10 +11,12 @@ module ActsAsTrashable
   
   module ActsMethods
     # Class method that injects the trash behavior into the class.
-    def acts_as_trashable
+    def acts_as_trashable(options = {})
       extend ClassMethods
       include InstanceMethods
       alias_method_chain :destroy, :trash
+      write_inheritable_attribute(:trashable_options, options)
+      class_inheritable_reader :trashable_options
     end
   end
   
@@ -41,7 +43,7 @@ module ActsAsTrashable
     def destroy_with_trash
       return destroy_without_trash if @acts_as_trashable_disabled
       TrashRecord.transaction do
-        trash = TrashRecord.new(self)
+        trash = TrashRecord.new(self, trashable_options)
         trash.save!
         return destroy_without_trash
       end

@@ -45,10 +45,11 @@ module ActsAsTrashable
     end
     
     # Create a new trash record for the provided record.
-    def initialize (record)
+    def initialize (record, options)
       super({})
       self.trashable_type = record.class.base_class.name
       self.trashable_id = record.id
+      @options = options
       self.data = Zlib::Deflate.deflate(Marshal.dump(serialize_attributes(record)))
     end
 
@@ -103,6 +104,11 @@ module ActsAsTrashable
     def serialize_attributes (record, already_serialized = {})
       return if already_serialized["#{record.class}.#{record.id}"]
       attrs = record.attributes.dup
+      if(@options[:excluded_attributes])
+        @options[:excluded_attributes].each do |excl|
+          attrs.delete excl.to_s
+        end
+      end
       already_serialized["#{record.class}.#{record.id}"] = true
     
       record.class.reflections.values.each do |association|
